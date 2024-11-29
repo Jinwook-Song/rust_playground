@@ -26,10 +26,13 @@ fn input_and_print() {
 }
 
 fn input_and_print2() {
-    let input = String::new();
-    some_text(input);
+    let mut input = String::new();
+    ref_text(&mut input);
     // ❌ 함수로 소유가 넘어간 이후에 input을 사용하려함
     let mut input2 = input;
 }
 
-fn some_text(_: String) {}
+fn take_text(_: String) {}
+fn ref_text(s: &mut String) {
+    s.push_str("append");
+}
