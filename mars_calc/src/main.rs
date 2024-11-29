@@ -1,14 +1,35 @@
+use std::io;
+
 fn main() {
-    let weight: f32 = 100.0;
-    let mut mars_weight = calculate_weight_on_mars(weight);
-
-    println!("{}kg Weight on Mars: {}kg", weight, mars_weight);
-
-    mars_weight *= 1000.0;
-
-    println!("{}g", mars_weight)
+    input_and_print();
 }
 
-fn calculate_weight_on_mars(weight: f32) -> f32 {
-    return (weight / 9.81) * 3.711;
+/**
+    1. 크기를 알 수 없는 String이 input에 저장된다. (즉, 힙에 저장된다. 크기의 정보를 갖는 메타데이터도 함께)
+    2. Stringdml 소유권이 input2로 넘어간다.
+*/
+fn input_and_print() {
+    let input = String::new();
+
+    let mut input2 = input;
+
+    println!("Enter some text:");
+
+    match io::stdin().read_line(&mut input2) {
+        Ok(_) => {
+            println!("You entered: {}", input2.trim());
+        }
+        Err(error) => {
+            println!("Error reading input: {}", error);
+        }
+    }
 }
+
+fn input_and_print2() {
+    let input = String::new();
+    some_text(input);
+    // ❌ 함수로 소유가 넘어간 이후에 input을 사용하려함
+    let mut input2 = input;
+}
+
+fn some_text(_: String) {}
