@@ -1,9 +1,10 @@
 use std::collections::HashMap;
-
+#[derive(Debug)]
 pub struct QueryString<'buf> {
     data: HashMap<&'buf str, Value<'buf>>,
 }
 
+#[derive(Debug)]
 pub enum Value<'buf> {
     Single(&'buf str),
     Multiple(Vec<&'buf str>),
@@ -29,14 +30,14 @@ impl<'buf> From<&'buf str> for QueryString<'buf> {
                 val = &sub_str[i + 1..];
             }
 
-            data.entry(key) //
+            data.entry(key)
                 .and_modify(|existing: &mut Value| match existing {
                     Value::Single(prev_val) => {
                         // (*) 이전 참조를 해제하고, 새로운 메모리 주소로 덮어씀
                         *existing = Value::Multiple(vec![prev_val, val]);
                     }
                     Value::Multiple(vec) => vec.push(val),
-                }) //
+                })
                 .or_insert(Value::Single(val));
         }
 

@@ -7,6 +7,7 @@ use std::str::Utf8Error;
 use super::method::{Method, MethodError};
 use super::QueryString;
 
+#[derive(Debug)]
 pub struct Request<'buf> {
     path: &'buf str,
     query_string: Option<QueryString<'buf>>,
@@ -39,18 +40,18 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
             path = &path[..i];
         }
 
-        Ok(Self {
+        return Ok(Self {
             path,
             query_string,
             method,
-        })
+        });
     }
 }
 
 fn get_next_word(request: &str) -> Option<(&str, &str)> {
-    for (idx, c) in request.chars().enumerate() {
+    for (i, c) in request.chars().enumerate() {
         if c == ' ' || c == '\r' {
-            return Some((&request[..idx], &request[idx + 1..]));
+            return Some((&request[..i], &request[i + 1..]));
         }
     }
 
@@ -67,10 +68,10 @@ pub enum ParseError {
 impl ParseError {
     fn message(&self) -> &str {
         match self {
-            ParseError::InvalidRequest => "Invalid request",
-            ParseError::InvalidEncoding => "Invalid encoding",
-            ParseError::InvalidProtocol => "Invalid protocol",
-            ParseError::InvalidMethod => "Invalid method",
+            Self::InvalidRequest => "Invalid request",
+            Self::InvalidEncoding => "Invalid encoding",
+            Self::InvalidProtocol => "Invalid protocol",
+            Self::InvalidMethod => "Invalid method",
         }
     }
 }

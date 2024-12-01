@@ -45,7 +45,9 @@ fn handle_accept(mut stream: TcpStream, _: SocketAddr) {
             );
 
             match Request::try_from(&buffer[..]) {
-                Ok(request) => todo!(),
+                Ok(request) => {
+                    dbg!(request);
+                }
                 Err(e) => println!("❌ Failed to parse request: {}", e),
             }
         }
