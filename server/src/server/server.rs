@@ -1,7 +1,7 @@
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 
-use crate::http::{Request, Response};
+use crate::http::{Request, Response, StatusCode};
 
 pub struct Server {
     addr: String,
@@ -44,16 +44,22 @@ fn handle_accept(mut stream: TcpStream, _: SocketAddr) {
                 String::from_utf8_lossy(&buffer)
             );
 
-            match Request::try_from(&buffer[..]) {
+            let response = match Request::try_from(&buffer[..]) {
                 Ok(request) => {
                     dbg!(request);
-                    let response = Response::new(
-                        crate::http::StatusCode::Ok,
+                    Response::new(
+                        StatusCode::Ok,
                         Some("<h1>Working</h1>".to_string()),
-                    );
-                    let _ = write!(stream, "{}", response);
+                    )
                 }
-                Err(e) => println!("❌ Failed to parse request: {}", e),
+                Err(e) => {
+                    println!("❌ Failed to parse request: {}", e);
+                    Response::new(StatusCode::BadRequest, None)
+                }
+            };
+
+            if let Err(e) = response.send(&mut stream) {
+                println!("Failed to send response: {}", e);
             }
         }
         Err(e) => {
