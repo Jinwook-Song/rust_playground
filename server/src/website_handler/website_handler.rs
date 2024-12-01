@@ -11,6 +11,11 @@ impl WebsiteHandler {
     pub fn new(public_path: String) -> Self {
         Self { public_path }
     }
+
+    fn read_file(&self, file_path: &str) -> Option<String> {
+        let path = format!("{}/{}", self.public_path, file_path);
+        fs::read_to_string(path).ok()
+    }
 }
 
 impl Handler for WebsiteHandler {
@@ -18,17 +23,17 @@ impl Handler for WebsiteHandler {
         match request.method() {
             Method::GET => match request.path() {
                 "/" => {
-                    let html = fs::read_to_string("docs/index.html")
-                        .unwrap_or_else(|_| {
-                            "<h1>Failed to load page</h1>".to_string()
-                        });
-                    Response::new(StatusCode::Ok, Some(html))
+                    Response::new(StatusCode::Ok, self.read_file("index.html"))
                 }
-                "/about" => Response::new(
-                    StatusCode::Ok,
-                    Some("About the website".to_string()),
-                ),
-                _ => Response::new(StatusCode::NotFound, None),
+                "/about" => {
+                    Response::new(StatusCode::Ok, self.read_file("about.html"))
+                }
+                path => match self.read_file(path) {
+                    Some(contents) => {
+                        Response::new(StatusCode::Ok, Some(contents))
+                    }
+                    None => Response::new(StatusCode::NotFound, None),
+                },
             },
 
             _ => Response::new(StatusCode::NotFound, None),
