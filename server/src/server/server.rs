@@ -1,7 +1,17 @@
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 
-use crate::http::{Request, Response, StatusCode};
+use crate::http::{ParseError, Request, Response, StatusCode};
+
+pub trait Handler {
+    fn handle_request(&mut self, request: &Request) -> Response;
+
+    // Default implementation
+    fn handle_bad_request(&mut self, e: &ParseError) -> Response {
+        println!("Failed to parse request: {}", e);
+        Response::new(StatusCode::BadRequest, None)
+    }
+}
 
 pub struct Server {
     addr: String,
@@ -14,7 +24,7 @@ impl Server {
     }
 
     // Instance Method
-    pub fn run(self) {
+    pub fn run(self, mut handler: impl Handler) {
         println!("✅ Listen on {}", self.addr);
         let listener = TcpListener::bind(&self.addr).unwrap_or_else(|e| {
             panic!("Failed to bind to address {}: {}", self.addr, e)
@@ -24,7 +34,7 @@ impl Server {
             match listener.accept() {
                 Ok((stream, addr)) => {
                     println!("🔗 Accepted connection from {}", addr);
-                    handle_accept(stream, addr);
+                    handle_accept(stream, addr, &mut handler);
                 }
                 Err(e) => println!("❌ Failed to accept connection: {}", e),
             }
@@ -33,7 +43,11 @@ impl Server {
 }
 
 /// Handles a single client connection.
-fn handle_accept(mut stream: TcpStream, _: SocketAddr) {
+fn handle_accept<H: Handler>(
+    mut stream: TcpStream,
+    _: SocketAddr,
+    handler: &mut H,
+) {
     // Initialize a buffer for reading data
     let mut buffer = [0; 1024];
 
@@ -45,17 +59,8 @@ fn handle_accept(mut stream: TcpStream, _: SocketAddr) {
             );
 
             let response = match Request::try_from(&buffer[..]) {
-                Ok(request) => {
-                    dbg!(request);
-                    Response::new(
-                        StatusCode::Ok,
-                        Some("<h1>Working</h1>".to_string()),
-                    )
-                }
-                Err(e) => {
-                    println!("❌ Failed to parse request: {}", e);
-                    Response::new(StatusCode::BadRequest, None)
-                }
+                Ok(request) => handler.handle_request(&request),
+                Err(e) => handler.handle_bad_request(&e),
             };
 
             if let Err(e) = response.send(&mut stream) {
